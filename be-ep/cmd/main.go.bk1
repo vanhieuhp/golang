@@ -1,0 +1,84 @@
+package main
+
+import (
+	"be-ep/internal/logic"
+	"fmt"
+)
+
+type Student struct {
+	Name  StringName `json:"name"`
+	Age   uint32     `json:"age" yaml, sql, validation`
+	Color []string   `json:"color"`
+}
+
+type StringName string
+
+func (n StringName) validate() bool {
+	return len(n) <= 32 && n != ""
+}
+
+func (s Student) GetAge() uint32 {
+	return s.Age
+}
+
+func (s *Student) setAge(age uint32) {
+	s.Age = age
+}
+
+func (s Student) checkName() bool {
+	return s.Name.validate()
+}
+
+var (
+	count          = 0
+	Count          = 0
+	countBit int64 = 0
+	colors         = [3]string{
+		"white",
+		"black",
+		"yellow",
+	}
+	colorMap = map[string]int{
+		"white":  0,
+		"black":  1,
+		"yellow": 2,
+	}
+)
+
+const (
+	NUMBER_OF_COLOR = 256
+	number_OF_COLOR = 256
+	NUMBER_OF_BITS  = 64
+)
+
+func counting() int {
+	//int, int8, int16, int32, int64
+	//uint, uint8, uint16, uint32, uint64
+	//float32, float64
+	//string
+	//byte
+	//rune
+	//bool true false
+	{
+		var count1 = 0
+		count1++
+	}
+
+	var count2 int64 = 0
+	var count3 = int64(0)
+	fmt.Println(count2, count3)
+
+	return count
+}
+
+func main() {
+	fmt.Println(logic.SayHello("World"))
+	//colors := make([]string, 0, 5)
+	colors := []string{"red", "green", "blue"}
+	colors = append(colors, "yellow")
+	//colors = make([]string, 0, 5)
+	fmt.Println(colors)
+	//for i := 0; i < 3; i++ {
+	//	fmt.Println(colors[i])
+	//}
+}
