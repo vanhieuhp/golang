@@ -98,7 +98,6 @@ func ErrCannotUpdateEntity(entity string, err error) *AppError {
 		fmt.Sprintf("ErrCannotUpdate(%s)", entity))
 }
 
-
 func ErrCannotGetEntity(entity string, err error) *AppError {
 	return NewCustomError(
 		err,
@@ -118,6 +117,13 @@ func ErrEntityExisted(entity string, err error) *AppError {
 		err,
 		fmt.Sprintf("%s already exists", strings.ToLower(entity)),
 		fmt.Sprintf("Err%sAlreadyExists", entity))
+}
+
+func ErrRecordNotFound(entity string, err error) *AppError {
+	return NewCustomError(
+		err,
+		fmt.Sprintf("Record not found", strings.ToLower(entity)),
+		fmt.Sprintf("ErrRecordNotFound(%s)", entity))
 }
 
 func ErrEntityNotFound(entity string, err error) *AppError {

@@ -5,8 +5,8 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"social-todo-list/common"
-	"social-todo-list/modules/item/biz"
 	"social-todo-list/modules/item/model"
+	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
 	"strconv"
 )
@@ -27,8 +27,9 @@ func UpdateItem(db *gorm.DB) func(context *gin.Context) {
 			return
 		}
 
+		requester := context.MustGet(common.CurrentUser).(common.Requester)
 		store := storage.NewSqlStorage(db)
-		business := biz.NewUpdateItemBiz(store)
+		business := service.NewUpdateItemBiz(store, requester)
 
 		if err := business.UpdateItemById(context, id, &data); err != nil {
 			context.JSON(http.StatusInternalServerError, err)

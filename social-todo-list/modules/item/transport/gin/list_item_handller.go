@@ -5,8 +5,8 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"social-todo-list/common"
-	"social-todo-list/modules/item/biz"
 	"social-todo-list/modules/item/model"
+	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
 )
 
@@ -28,7 +28,7 @@ func ListItem(db *gorm.DB) func(context *gin.Context) {
 		}
 
 		store := storage.NewSqlStorage(db)
-		business := biz.NewListItemBiz(store)
+		business := service.NewListItemBiz(store)
 
 		result, err := business.ListItem(context.Request.Context(), &filter, &paging)
 

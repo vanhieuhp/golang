@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"social-todo-list/common"
-	"social-todo-list/modules/item/biz"
+	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
 	"strconv"
 )
@@ -21,7 +21,7 @@ func DeleteItem(db *gorm.DB) func(context *gin.Context) {
 		}
 
 		store := storage.NewSqlStorage(db)
-		business := biz.NewDeleteItemBiz(store)
+		business := service.NewDeleteItemBiz(store)
 
 		if err := business.DeleteItemById(context.Request.Context(), id); err != nil {
 			context.JSON(http.StatusBadRequest, err)

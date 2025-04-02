@@ -6,32 +6,49 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
+	"os"
 	"social-todo-list/common"
+	"social-todo-list/component/jwt"
 	"social-todo-list/middleware"
 	"social-todo-list/modules/item/transport/gin"
+	"social-todo-list/modules/user/storage"
+	ginuser "social-todo-list/modules/user/transport/gin"
+	"social-todo-list/upload"
 )
 
 func main() {
-	dsn := "admin:password@tcp(127.0.0.1:3306)/springboot?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := os.Getenv("DB_CONN")
+	systemSecret := os.Getenv("JWT_SECRET")
+
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	router := gin.Default()
+	tokenProvider := jwt.NewTokenJWTProvider("jwt", systemSecret)
+	authStore := storage.NewSqlStorage(db)
+	middleAuth := middleware.RequiredAuth(authStore, tokenProvider)
 
+	router := gin.Default()
 	router.Use(middleware.Recovery())
 
 	v1 := router.Group("/api/v1")
 	{
+		v1.PUT("/upload", upload.Upload(db))
+
+		v1.POST("/register", ginuser.Register(db))
+		v1.POST("/login", ginuser.Login(db, tokenProvider))
+		v1.GET("/profile", middleAuth, ginuser.Profile())
+
 		items := v1.Group("/items")
 		{
-			items.POST("", ginitem.CreateItem(db))
+			items.POST("", middleAuth, ginitem.CreateItem(db))
 			items.GET("", ginitem.ListItem(db))
 			items.GET("/:id", ginitem.GetItem(db))
-			items.PUT("/:id", ginitem.UpdateItem(db))
-			items.DELETE("/:id", ginitem.DeleteItem(db))
+			items.PUT("/:id", middleAuth, ginitem.UpdateItem(db))
+			items.DELETE("/:id", middleAuth, ginitem.DeleteItem(db))
 		}
 	}
 
@@ -50,4 +67,3 @@ func main() {
 		return
 	} // listen and serve on 0.0.0.0:8080
 }
-

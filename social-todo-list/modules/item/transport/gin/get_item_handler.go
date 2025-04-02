@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"social-todo-list/common"
-	"social-todo-list/modules/item/biz"
+	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
 	"strconv"
 )
@@ -20,7 +20,7 @@ func GetItem(db *gorm.DB) func(context *gin.Context) {
 		}
 
 		store := storage.NewSqlStorage(db)
-		business := biz.NewGetItemBiz(store)
+		business := service.NewGetItemBiz(store)
 
 		data, err := business.GetItemById(context.Request.Context(), id)
 		if err != nil {

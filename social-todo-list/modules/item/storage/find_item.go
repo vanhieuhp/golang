@@ -14,7 +14,7 @@ func (sql *sqlStorage) GetItem(ctx context.Context, cond map[string]interface{})
 
 	if err := sql.db.Where(cond).First(&data).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, common.RecordNotFound
+			return nil, common.ErrDB(err)
 		}
 		return nil, err
 	}

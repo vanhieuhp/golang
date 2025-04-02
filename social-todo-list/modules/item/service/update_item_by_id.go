@@ -1,4 +1,4 @@
-package biz
+package service
 
 import (
 	"context"
@@ -13,17 +13,18 @@ type UpdateItemStorage interface {
 	UpdateItem(ctx context.Context, cond map[string]interface{}, dataUpdate *model.TodoItemUpdate) error
 }
 
-type updateItemBiz struct {
+type updateItemService struct {
 	store UpdateItemStorage
+	requester common.Requester
 }
 
-func NewUpdateItemBiz(store UpdateItemStorage) *updateItemBiz {
-	return &updateItemBiz{store: store}
+func NewUpdateItemBiz(store UpdateItemStorage, request common.Requester) *updateItemService {
+	return &updateItemService{store: store, requester: request}
 }
 
-func (biz *updateItemBiz) UpdateItemById(ctx context.Context, id int, dataUpdate *model.TodoItemUpdate) error {
+func (service *updateItemService) UpdateItemById(ctx context.Context, id int, dataUpdate *model.TodoItemUpdate) error {
 
-	data, err := biz.store.GetItem(ctx, map[string]interface{}{"id": id})
+	data, err := service.store.GetItem(ctx, map[string]interface{}{"id": id})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return common.ErrCannotGetEntity(model.EntityName, err)
@@ -31,11 +32,17 @@ func (biz *updateItemBiz) UpdateItemById(ctx context.Context, id int, dataUpdate
 		return common.ErrCannotUpdateEntity(model.EntityName, err)
 	}
 
+	isOwner := service.requester.GetUserId() == data.UserId
+
+	if !isOwner && !common.IsAdmin(service.requester) {
+		return common.ErrNoPermission(errors.New("No permission"))
+	}
+
 	if data.Status != nil && *data.Status == model.ItemStatusDeleted {
 		return common.ErrEntityDeleted(model.EntityName, model.ErrItemIdDeleted)
 	}
 
-	if err := biz.store.UpdateItem(ctx, map[string]interface{}{"id": id}, dataUpdate); err != nil {
+	if err := service.store.UpdateItem(ctx, map[string]interface{}{"id": id}, dataUpdate); err != nil {
 		return err
 	}
 	return nil
