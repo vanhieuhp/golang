@@ -6,7 +6,7 @@ import (
 	"social-todo-list/modules/item/model"
 )
 
-type ListItemStorage interface {
+type ListItemRepo interface {
 	ListItem(
 		ctx context.Context,
 		filter *model.Filter,
@@ -15,22 +15,23 @@ type ListItemStorage interface {
 	) ([]model.TodoIem, error)
 }
 
-type listItemBiz struct {
-	store ListItemStorage
+type listItemService struct {
+	repo      ListItemRepo
+	requester common.Requester
 }
 
-func NewListItemBiz(store ListItemStorage) *listItemBiz {
-	return &listItemBiz{store: store}
+func NewListItemService(repo ListItemRepo, requester common.Requester) *listItemService {
+	return &listItemService{repo: repo, requester: requester}
 }
 
-func (biz *listItemBiz) ListItem(
+func (listItemService *listItemService) ListItem(
 	ctx context.Context,
 	filter *model.Filter,
 	paging *common.Paging,
 	moreKeys ...string,
 ) ([]model.TodoIem, error) {
 
-	data, err := biz.store.ListItem(ctx, filter, paging, moreKeys...)
+	data, err := listItemService.repo.ListItem(ctx, filter, paging, moreKeys...)
 	if err != nil {
 		return nil, err
 	}

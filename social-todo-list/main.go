@@ -13,6 +13,7 @@ import (
 	"social-todo-list/modules/item/transport/gin"
 	"social-todo-list/modules/user/storage"
 	ginuser "social-todo-list/modules/user/transport/gin"
+	ginuserlikeitem "social-todo-list/modules/userlikeitem/transport/gin"
 	"social-todo-list/upload"
 )
 
@@ -21,7 +22,6 @@ func main() {
 	systemSecret := os.Getenv("JWT_SECRET")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-
 
 	if err != nil {
 		log.Fatalln(err)
@@ -45,10 +45,14 @@ func main() {
 		items := v1.Group("/items")
 		{
 			items.POST("", middleAuth, ginitem.CreateItem(db))
-			items.GET("", ginitem.ListItem(db))
+			items.GET("", middleAuth, ginitem.ListItem(db))
 			items.GET("/:id", ginitem.GetItem(db))
 			items.PUT("/:id", middleAuth, ginitem.UpdateItem(db))
 			items.DELETE("/:id", middleAuth, ginitem.DeleteItem(db))
+
+			items.POST("/:id/like", middleAuth, ginuserlikeitem.LikeItem(db))
+			items.DELETE("/:id/unlike", middleAuth, ginuserlikeitem.UnlikeItem(db))
+			items.GET("/:id/liked-users", middleAuth, ginuserlikeitem.ListUserLikedItem(db))
 		}
 	}
 

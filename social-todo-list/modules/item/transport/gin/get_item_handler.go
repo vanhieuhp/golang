@@ -7,12 +7,12 @@ import (
 	"social-todo-list/common"
 	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
-	"strconv"
 )
 
 func GetItem(db *gorm.DB) func(context *gin.Context) {
 	return func(context *gin.Context) {
-		id, err := strconv.Atoi(context.Param("id"))
+		id, err := common.DecodeUID(context.Param("id"))
+
 		if err != nil {
 			context.JSON(http.StatusBadRequest, common.ErrInvalidRequest(err))
 
@@ -22,10 +22,9 @@ func GetItem(db *gorm.DB) func(context *gin.Context) {
 		store := storage.NewSqlStorage(db)
 		business := service.NewGetItemBiz(store)
 
-		data, err := business.GetItemById(context.Request.Context(), id)
+		data, err := business.GetItemById(context.Request.Context(), int(id.GetLocalID()))
 		if err != nil {
 			context.JSON(http.StatusBadRequest, err)
-
 			return
 		}
 

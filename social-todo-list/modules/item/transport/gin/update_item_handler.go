@@ -8,14 +8,13 @@ import (
 	"social-todo-list/modules/item/model"
 	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
-	"strconv"
 )
 
 func UpdateItem(db *gorm.DB) func(context *gin.Context) {
 	return func(context *gin.Context) {
 		var data model.TodoItemUpdate
 
-		id, err := strconv.Atoi(context.Param("id"))
+		id, err := common.DecodeUID(context.Param("id"))
 		if err != nil {
 			context.JSON(http.StatusBadRequest, common.ErrInvalidRequest(err))
 
@@ -31,7 +30,7 @@ func UpdateItem(db *gorm.DB) func(context *gin.Context) {
 		store := storage.NewSqlStorage(db)
 		business := service.NewUpdateItemBiz(store, requester)
 
-		if err := business.UpdateItemById(context, id, &data); err != nil {
+		if err := business.UpdateItemById(context, int(id.GetLocalID()), &data); err != nil {
 			context.JSON(http.StatusInternalServerError, err)
 
 			return

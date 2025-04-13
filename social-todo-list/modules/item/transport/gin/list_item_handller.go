@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"social-todo-list/common"
 	"social-todo-list/modules/item/model"
+	"social-todo-list/modules/item/repository"
 	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
+	userLikeStore "social-todo-list/modules/userlikeitem/storage"
 )
 
 func ListItem(db *gorm.DB) func(context *gin.Context) {
@@ -27,13 +29,21 @@ func ListItem(db *gorm.DB) func(context *gin.Context) {
 			return
 		}
 
+		requester := context.MustGet(common.CurrentUser).(common.Requester)
+
 		store := storage.NewSqlStorage(db)
-		business := service.NewListItemBiz(store)
+		likeStore := userLikeStore.NewSqlStorage(db)
+		repo := repository.NewListItemReo(store, likeStore, requester)
+		business := service.NewListItemService(repo, requester)
 
 		result, err := business.ListItem(context.Request.Context(), &filter, &paging)
 
 		if err != nil {
 			context.JSON(http.StatusBadRequest, err)
+		}
+
+		for i := range result {
+			result[i].Mask()
 		}
 
 		context.JSON(http.StatusOK, common.NewSuccessResponse(result, paging, filter))

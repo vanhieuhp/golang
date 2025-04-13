@@ -2,8 +2,13 @@ package common
 
 import "log"
 
+type DbType int
+
 const (
-	CurrentUser = "current_user"
+	CurrentUser         = "current_user"
+	DbTypeItem   DbType = 1
+	DbTypeUser   DbType = 2
+	PluginDBMain        = "mysql"
 )
 
 func Recovery() {
