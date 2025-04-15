@@ -6,6 +6,7 @@ import (
 	"log"
 	"social-todo-list/common"
 	"social-todo-list/modules/userlikeitem/model"
+	"social-todo-list/pubsub"
 )
 
 type UserUnlikeItemStore interface {
@@ -14,16 +15,24 @@ type UserUnlikeItemStore interface {
 }
 
 type userUnlikeItemService struct {
-	store     UserUnlikeItemStore
-	itemStore DecreaseItemStorage
+	store UserUnlikeItemStore
+	//itemStore DecreaseItemStorage
+	ps pubsub.PubSub
 }
 
-type DecreaseItemStorage interface {
-	DecreaseLikeCount(ctx context.Context, id int) error
-}
+//type DecreaseItemStorage interface {
+//	DecreaseLikeCount(ctx context.Context, id int) error
+//}
 
-func NewUserUnlikeItemService(store UserUnlikeItemStore, itemStore DecreaseItemStorage) *userUnlikeItemService {
-	return &userUnlikeItemService{store: store, itemStore: itemStore}
+func NewUserUnlikeItemService(
+	store UserUnlikeItemStore,
+	//itemStore DecreaseItemStorage,
+	pubSub pubsub.PubSub,
+) *userUnlikeItemService {
+	return &userUnlikeItemService{
+		store: store,
+		//itemStore: itemStore,
+		ps: pubSub}
 }
 
 func (service *userUnlikeItemService) UnlikeItem(ctx context.Context, userid, itemId int) error {
@@ -42,12 +51,9 @@ func (service *userUnlikeItemService) UnlikeItem(ctx context.Context, userid, it
 		return model.ErrCannotLikeItem(err)
 	}
 
-	go func() {
-		defer common.Recovery()
-		if err := service.itemStore.DecreaseLikeCount(ctx, itemId); err != nil {
-			log.Println(err)
-		}
-	}()
+	if err := service.ps.Publish(ctx, common.TopicUserUnLikedItem, pubsub.NewMessage(&model.Like{UserId: userid, ItemId: itemId})); err != nil {
+		log.Println(err)
+	}
 
 	return nil
 }

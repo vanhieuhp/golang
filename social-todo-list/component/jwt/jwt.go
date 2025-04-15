@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-type jwtProvider struct {
+type JwtProvider struct {
 	secret string
 	prefix string
 }
 
-func NewTokenJWTProvider(prefix string, secret string) *jwtProvider {
-	return &jwtProvider{prefix: prefix, secret: secret}
+func NewTokenJWTProvider(prefix string, secret string) *JwtProvider {
+	return &JwtProvider{prefix: prefix, secret: secret}
 }
 
 type myClaims struct {
@@ -32,11 +32,11 @@ func (t *token) GetToken() string {
 	return t.Token
 }
 
-func (j *jwtProvider) SecretKey() string {
+func (j *JwtProvider) SecretKey() string {
 	return j.secret
 }
 
-func (j *jwtProvider) Generate(data tokenprovider.TokenPayload, expiry int) (tokenprovider.Token, error) {
+func (j *JwtProvider) Generate(data tokenprovider.TokenPayload, expiry int) (tokenprovider.Token, error) {
 
 	// generate the JWT
 	now := time.Now()
@@ -68,7 +68,7 @@ func (j *jwtProvider) Generate(data tokenprovider.TokenPayload, expiry int) (tok
 	}, nil
 }
 
-func (j *jwtProvider) Validate(token string) (tokenprovider.TokenPayload, error) {
+func (j *JwtProvider) Validate(token string) (tokenprovider.TokenPayload, error) {
 
 	res, err := jwt.ParseWithClaims(token, &myClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(j.secret), nil

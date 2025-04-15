@@ -1,16 +1,17 @@
 package ginuserlikeitem
 
 import (
+	goservice "github.com/200Lab-Education/go-sdk"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
 	"social-todo-list/common"
-	itemStore "social-todo-list/modules/item/storage"
 	"social-todo-list/modules/userlikeitem/service"
 	"social-todo-list/modules/userlikeitem/storage"
+	"social-todo-list/pubsub"
 )
 
-func UnlikeItem(db *gorm.DB) gin.HandlerFunc {
+func UnlikeItem(serviceCtx goservice.ServiceContext, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := common.DecodeUID(c.Param("id"))
 
@@ -21,15 +22,17 @@ func UnlikeItem(db *gorm.DB) gin.HandlerFunc {
 		requester := c.MustGet(common.CurrentUser).(common.Requester)
 
 		store := storage.NewSqlStorage(db)
-		itemStore := itemStore.NewSqlStorage(db)
-		userLikeItemService := service.NewUserUnlikeItemService(store, itemStore)
+		//itemStore := itemStore.NewSqlStorage(db)
+		ps := serviceCtx.MustGet(common.PluginPubSub).(pubsub.PubSub)
+
+		userLikeItemService := service.NewUserUnlikeItemService(store, ps)
 
 		if err := userLikeItemService.UnlikeItem(
 			c.Request.Context(),
 			requester.GetUserId(),
 			int(id.GetLocalID()),
 		); err != nil {
-			panic(err)
+			c.JSON(http.StatusInternalServerError, err)
 		}
 
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(true))
