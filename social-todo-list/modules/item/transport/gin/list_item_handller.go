@@ -1,6 +1,7 @@
 package ginitem
 
 import (
+	goservice "github.com/200Lab-Education/go-sdk"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -9,12 +10,16 @@ import (
 	"social-todo-list/modules/item/repository"
 	"social-todo-list/modules/item/service"
 	"social-todo-list/modules/item/storage"
-	userLikeStore "social-todo-list/modules/userlikeitem/storage"
+	"social-todo-list/modules/item/storage/restapi"
 )
 
-func ListItem(db *gorm.DB) func(context *gin.Context) {
+func ListItem(serviceCtx goservice.ServiceContext, db *gorm.DB) func(context *gin.Context) {
 	return func(context *gin.Context) {
 		var paging common.Paging
+		apiItemCaller := serviceCtx.MustGet(common.PluginItemAPI).(interface {
+			GetServiceURL() string
+		})
+		logger := serviceCtx.Logger("like-store")
 
 		if err := context.ShouldBind(&paging); err != nil {
 			context.JSON(http.StatusBadRequest, common.ErrInvalidRequest(err))
@@ -32,7 +37,7 @@ func ListItem(db *gorm.DB) func(context *gin.Context) {
 		requester := context.MustGet(common.CurrentUser).(common.Requester)
 
 		store := storage.NewSqlStorage(db)
-		likeStore := userLikeStore.NewSqlStorage(db)
+		likeStore := restapi.New(apiItemCaller.GetServiceURL(), logger)
 		repo := repository.NewListItemReo(store, likeStore, requester)
 		business := service.NewListItemService(repo, requester)
 

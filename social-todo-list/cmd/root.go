@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	goservice "github.com/200Lab-Education/go-sdk"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -15,6 +17,7 @@ import (
 	authStore "social-todo-list/modules/user/storage"
 	ginuser "social-todo-list/modules/user/transport/gin"
 	ginuserlikeitem "social-todo-list/modules/userlikeitem/transport/gin"
+	"social-todo-list/plugin/rpccaller"
 	"social-todo-list/pubsub"
 	"social-todo-list/subscriber"
 	"social-todo-list/upload"
@@ -25,6 +28,7 @@ func newService() goservice.Service {
 		goservice.WithName("social-todo-list"),
 		goservice.WithVersion("1.0.0"),
 		goservice.WithInitRunnable(pubsub.NewPubSub(common.PluginPubSub)),
+		goservice.WithInitRunnable(rpccaller.NewApiItemCaller(common.PluginItemAPI)),
 		//goservice.WithInitRunnable(simple.NewSimplePlugin("simple")),
 	)
 
@@ -32,7 +36,7 @@ func newService() goservice.Service {
 }
 
 func setupDatabase() (*gorm.DB, error) {
-	dsn := os.Getenv("DB_CONN")
+	dsn := os.Getenv("DATABASE_URL")
 	return gorm.Open(mysql.Open(dsn), &gorm.Config{})
 }
 
@@ -63,7 +67,7 @@ func registerRoutes(service goservice.Service, db *gorm.DB, tokenProvider *jwt.J
 			items := v1.Group("/items")
 			{
 				items.POST("", middleAuth, ginitem.CreateItem(db))
-				items.GET("", middleAuth, ginitem.ListItem(db))
+				items.GET("", middleAuth, ginitem.ListItem(service, db))
 				items.GET("/:id", ginitem.GetItem(db))
 				items.PUT("/:id", middleAuth, ginitem.UpdateItem(db))
 				items.DELETE("/:id", middleAuth, ginitem.DeleteItem(db))
@@ -72,13 +76,19 @@ func registerRoutes(service goservice.Service, db *gorm.DB, tokenProvider *jwt.J
 				items.DELETE("/:id/unlike", middleAuth, ginuserlikeitem.UnlikeItem(service, db))
 				items.GET("/:id/liked-users", middleAuth, ginuserlikeitem.ListUserLikedItem(db))
 			}
+
+			rpc := v1.Group("/rpc")
+			{
+				rpc.POST("/get_item_likes", ginuserlikeitem.GetItemLikes(db))
+			}
 		}
 
 		engine.GET("/ping", func(c *gin.Context) {
 			c.JSON(200, gin.H{"message": "pong"})
 		})
 
-		engine.Run("localhost:8080")
+		port := os.Getenv("PORT")
+		engine.Run(fmt.Sprintf("localhost:%s", port))
 	})
 }
 
@@ -111,6 +121,13 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: Error loading .env file:", err)
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Command execution failed: %v", err)
 	}

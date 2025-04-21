@@ -5,13 +5,15 @@ import "log"
 type DbType int
 
 const (
-	CurrentUser                 = "current_user"
-	DbTypeItem           DbType = 1
-	DbTypeUser           DbType = 2
-	PluginDBMain                = "mysql"
-	PluginPubSub                = "pub_sub"
-	TopicUserLikedItem          = "user_liked_item"
-	TopicUserUnLikedItem        = "user_unliked_item"
+	CurrentUser          = "current_user"
+	DbTypeItem    DbType = 1
+	DbTypeUser    DbType = 2
+	PluginDBMain         = "mysql"
+	PluginPubSub         = "pub_sub"
+	PluginItemAPI        = "item_api"
+
+	TopicUserLikedItem   = "user_liked_item"
+	TopicUserUnLikedItem = "user_unliked_item"
 )
 
 func Recovery() {
